@@ -3,12 +3,11 @@
  */
 package reactor.context.propagation.test;
 
-public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
+import io.micrometer.context.ContextRegistry;
+import io.micrometer.context.ContextSnapshot;
 
-    public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+public class App {
+
+    public static void main(String[] args) { // https://micrometer.io/docs/contextPropagation
     }
 }

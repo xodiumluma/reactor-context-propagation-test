@@ -3,12 +3,30 @@
  */
 package reactor.context.propagation.test;
 
+import io.micrometer.context.ContextRegistry;
+import io.micrometer.context.ContextSnapshot;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppTest {
-    @Test void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
+    @Test void appWorksAsExpected() {
+        final var FIRST = "g'day!!!";
+        final var SECOND = "ٱلسَّلَامُ عَلَيْكُمْ,";
+        ContextRegistry registry = new ContextRegistry();
+        registry.registerThreadLocalAccessor(new ObservationThreadLocalAccessor());
+        ObservationThreadLocalHolder.setValue(FIRST);
+        // capture!
+        ContextSnapshot snapshot = ContextSnapshot.captureAllUsing(key -> true, registry);
+        // change ThreadLocal
+        ObservationThreadLocalHolder.setValue(SECOND);
+        try {
+            try (ContextSnapshot.Scope scope = snapshot.setThreadLocals()) {
+                assertEquals(ObservationThreadLocalHolder.getValue(), FIRST);
+            }
+            assertEquals(ObservationThreadLocalHolder.getValue(), "ni hao");
+        } finally {
+            // prevent polluting the thread
+            ObservationThreadLocalHolder.reset();
+        }
     }
 }
