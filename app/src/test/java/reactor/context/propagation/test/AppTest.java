@@ -6,7 +6,7 @@ package reactor.context.propagation.test;
 import io.micrometer.context.ContextRegistry;
 import io.micrometer.context.ContextSnapshot;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AppTest {
     @Test void appWorksAsExpected() {
@@ -23,7 +23,7 @@ class AppTest {
             try (ContextSnapshot.Scope scope = snapshot.setThreadLocals()) {
                 assertEquals(ObservationThreadLocalHolder.getValue(), FIRST);
             }
-            assertEquals(ObservationThreadLocalHolder.getValue(), "ni hao");
+            assertEquals(ObservationThreadLocalHolder.getValue(), SECOND);
         } finally {
             // prevent polluting the thread
             ObservationThreadLocalHolder.reset();
