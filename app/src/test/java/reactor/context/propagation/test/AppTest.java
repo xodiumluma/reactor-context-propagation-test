@@ -5,15 +5,31 @@ package reactor.context.propagation.test;
 
 import io.micrometer.context.ContextRegistry;
 import io.micrometer.context.ContextSnapshot;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Hooks;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.slf4j.Logger;
+import reactor.util.Loggers;
+import reactor.util.context.Context;
 
 class AppTest {
+    private ContextRegistry registry;
+
+    @BeforeEach void setup() {
+        registry = ContextRegistry.getInstance();
+    }
+
     @Test void appWorksAsExpected() {
+        var accessor = new ObservationThreadLocalAccessor();
+        registry.registerThreadLocalAccessor(accessor);
         final var FIRST = "g'day!!!";
         final var SECOND = "ٱلسَّلَامُ عَلَيْكُمْ,";
-        ContextRegistry registry = new ContextRegistry();
-        registry.registerThreadLocalAccessor(new ObservationThreadLocalAccessor());
         ObservationThreadLocalHolder.setValue(FIRST);
         // capture!
         ContextSnapshot snapshot = ContextSnapshot.captureAllUsing(key -> true, registry);
@@ -28,5 +44,29 @@ class AppTest {
             // prevent polluting the thread
             ObservationThreadLocalHolder.reset();
         }
+    }
+
+    @Test void appWorksWithReactor() throws InterruptedException {
+        Loggers.useConsoleLoggers();
+        var accessor = new ObservationThreadLocalAccessor();
+        registry.registerThreadLocalAccessor(accessor);
+        final var STARTING = "STARTING!!";
+        final var NEXT = "NEXT!!";
+        ObservationThreadLocalHolder.setValue(STARTING);
+        // capture!
+        ContextSnapshot snapshot = ContextSnapshot.captureAllUsing(key -> true, registry);
+        ObservationThreadLocalHolder.setValue(NEXT);
+        try {
+           try (ContextSnapshot.Scope scope = snapshot.setThreadLocals()) {
+               Mono<String> chain = Mono.just("hello starting" + ObservationThreadLocalHolder.getValue())
+                 .log();
+               Thread mySubscriberThread = new Thread(chain::block);
+               mySubscriberThread.start();
+               mySubscriberThread.join();
+           }
+        } finally {
+           ObservationThreadLocalHolder.reset();
+        }
+
     }
 }
