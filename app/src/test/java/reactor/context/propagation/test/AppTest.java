@@ -7,14 +7,21 @@ import io.micrometer.context.ContextRegistry;
 import io.micrometer.context.ContextSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import reactor.util.Loggers;
+import reactor.util.context.Context;
+
+import java.time.Duration;
 
 class AppTest {
     private ContextRegistry registry;
+
+    private static final ThreadLocal<String> MY_THREADLOCALSTORAGE = new ThreadLocal<>();
 
     @BeforeEach void setup() {
         registry = ContextRegistry.getInstance();
@@ -43,25 +50,31 @@ class AppTest {
 
     @Test void worksBetweenThreads() throws InterruptedException {
         Loggers.useConsoleLoggers();
-        var accessor = new ObservationThreadLocalAccessor();
-        registry.registerThreadLocalAccessor(accessor);
-        final var STARTING = "STARTING!!";
-        final var NEXT = "NEXT!!";
-        ObservationThreadLocalHolder.setValue(STARTING);
-        // capture!
-        ContextSnapshot snapshot = ContextSnapshot.captureAllUsing(key -> true, registry);
-        ObservationThreadLocalHolder.setValue(NEXT);
-        try {
-           try (ContextSnapshot.Scope scope = snapshot.setThreadLocals()) {
-               Mono<String> chain = Mono.just("hello starting" + ObservationThreadLocalHolder.getValue())
-                 .log();
-               Thread mySubscriberThread = new Thread(chain::block);
-               mySubscriberThread.start();
-               mySubscriberThread.join();
-           }
-        } finally {
-           ObservationThreadLocalHolder.reset();
-        }
+        final var CONTEXT_KEY = "كيف حالك";
+        final var ALPHANUMERIC_ID = "THIS IS MY ID!!!1234-567-ABC";
+        registry.registerThreadLocalAccessor(CONTEXT_KEY,
+          MY_THREADLOCALSTORAGE::get,
+          MY_THREADLOCALSTORAGE::set,
+          MY_THREADLOCALSTORAGE::remove);
+        Hooks.enableAutomaticContextPropagation();
+        Mono<Object> handler = Mono.just("HELLO!")
+          .delayElement(Duration.ofSeconds(2))
+          .handle((v, sink) -> {
+              assertEquals(MY_THREADLOCALSTORAGE.get(), ALPHANUMERIC_ID);
+              sink.next(v + MY_THREADLOCALSTORAGE.get());
+          })
+          .log()
+          .contextWrite(Context.of(CONTEXT_KEY, ALPHANUMERIC_ID));
 
+        assertNull(MY_THREADLOCALSTORAGE.get());
+        final var BOO = "BOO!";
+        MY_THREADLOCALSTORAGE.set(BOO);
+        assertEquals(MY_THREADLOCALSTORAGE.get(), BOO);
+
+        Thread mySubscriberThread = new Thread(handler::block);
+        mySubscriberThread.start();
+        mySubscriberThread.join();
+
+        MY_THREADLOCALSTORAGE.remove();
     }
 }
