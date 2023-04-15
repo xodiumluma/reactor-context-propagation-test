@@ -7,16 +7,11 @@ import io.micrometer.context.ContextRegistry;
 import io.micrometer.context.ContextSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-import java.util.concurrent.ThreadLocalRandom;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.slf4j.Logger;
+
 import reactor.util.Loggers;
-import reactor.util.context.Context;
 
 class AppTest {
     private ContextRegistry registry;
@@ -25,7 +20,7 @@ class AppTest {
         registry = ContextRegistry.getInstance();
     }
 
-    @Test void appWorksAsExpected() {
+    @Test void contextSnapshotWithinSameThread() {
         var accessor = new ObservationThreadLocalAccessor();
         registry.registerThreadLocalAccessor(accessor);
         final var FIRST = "g'day!!!";
@@ -46,7 +41,7 @@ class AppTest {
         }
     }
 
-    @Test void appWorksWithReactor() throws InterruptedException {
+    @Test void worksBetweenThreads() throws InterruptedException {
         Loggers.useConsoleLoggers();
         var accessor = new ObservationThreadLocalAccessor();
         registry.registerThreadLocalAccessor(accessor);
