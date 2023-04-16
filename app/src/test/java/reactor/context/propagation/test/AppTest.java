@@ -49,7 +49,7 @@ class AppTest {
         }
     }
 
-    @Test void worksBetweenThreads() throws InterruptedException {
+    @Test void worksBetweenThreads() {
         Loggers.useConsoleLoggers();
         final var CONTEXT_KEY = "كيف حالك";
         final var ALPHANUMERIC_ID = "THIS IS MY ID!!!1234-567-ABC";
