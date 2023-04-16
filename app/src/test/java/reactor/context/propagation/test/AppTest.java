@@ -71,7 +71,7 @@ class AppTest {
         assertEquals(MY_THREADLOCALSTORAGE.get(), BOO);
 
         StepVerifier.create(handler)
-          .expectNext(HELLO + ALPHANUMERIC_ID + "?")
+          .expectNext(HELLO + ALPHANUMERIC_ID)
           .expectComplete()
           .verify();
 
