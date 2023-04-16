@@ -19,6 +19,7 @@ repositories {
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
+    testImplementation 'io.projectreactor:reactor-test:3.5.5'
 
     // This dependency is used by the application.
     implementation 'io.projectreactor:reactor-core:3.5.5'
