@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import reactor.util.Loggers;
 import reactor.util.context.Context;
+import reactor.test.StepVerifier;
 
 import java.time.Duration;
 
@@ -52,14 +53,15 @@ class AppTest {
         Loggers.useConsoleLoggers();
         final var CONTEXT_KEY = "كيف حالك";
         final var ALPHANUMERIC_ID = "THIS IS MY ID!!!1234-567-ABC";
+        final var HELLO = "HELLO!";
         registry.registerThreadLocalAccessor(CONTEXT_KEY,
           MY_THREADLOCALSTORAGE::get,
           MY_THREADLOCALSTORAGE::set,
           MY_THREADLOCALSTORAGE::remove);
         Hooks.enableAutomaticContextPropagation();
-        Mono<String> handler = Mono.defer(() -> Mono.just("HELLO!")
+        Mono<String> handler = Mono.defer(() -> Mono.just(HELLO)
           .delayElement(Duration.ofSeconds(2))
-          .map(v -> MY_THREADLOCALSTORAGE.get())
+          .map(v -> v + MY_THREADLOCALSTORAGE.get())
           .log()
           .contextWrite(Context.of(CONTEXT_KEY, ALPHANUMERIC_ID)));
 
@@ -68,9 +70,10 @@ class AppTest {
         MY_THREADLOCALSTORAGE.set(BOO);
         assertEquals(MY_THREADLOCALSTORAGE.get(), BOO);
 
-        Thread mySubscriberThread = new Thread(handler::block);
-        mySubscriberThread.start();
-        mySubscriberThread.join();
+        StepVerifier.create(handler)
+          .expectNext(HELLO + ALPHANUMERIC_ID + "?")
+          .expectComplete()
+          .verify();
 
         MY_THREADLOCALSTORAGE.remove();
     }
