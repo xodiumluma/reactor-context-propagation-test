@@ -57,14 +57,11 @@ class AppTest {
           MY_THREADLOCALSTORAGE::set,
           MY_THREADLOCALSTORAGE::remove);
         Hooks.enableAutomaticContextPropagation();
-        Mono<Object> handler = Mono.just("HELLO!")
+        Mono<String> handler = Mono.defer(() -> Mono.just("HELLO!")
           .delayElement(Duration.ofSeconds(2))
-          .handle((v, sink) -> {
-              assertEquals(MY_THREADLOCALSTORAGE.get(), ALPHANUMERIC_ID);
-              sink.next(v + MY_THREADLOCALSTORAGE.get());
-          })
+          .map(v -> MY_THREADLOCALSTORAGE.get())
           .log()
-          .contextWrite(Context.of(CONTEXT_KEY, ALPHANUMERIC_ID));
+          .contextWrite(Context.of(CONTEXT_KEY, ALPHANUMERIC_ID)));
 
         assertNull(MY_THREADLOCALSTORAGE.get());
         final var BOO = "BOO!";
