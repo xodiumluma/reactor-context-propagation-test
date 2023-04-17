@@ -26,10 +26,10 @@ class AppTest {
   }
 
   @Test void contextSnapshotWithinSameThread() {
-    var accessor = new ObservationThreadLocalAccessor();
+    ObservationThreadLocalAccessor accessor = new ObservationThreadLocalAccessor();
     registry.registerThreadLocalAccessor(accessor);
-    final var FIRST = "g'day!!!";
-    final var SECOND = "ٱلسَّلَامُ عَلَيْكُمْ,";
+    final String FIRST = "g'day!!!";
+    final String SECOND = "ٱلسَّلَامُ عَلَيْكُمْ,";
     ObservationThreadLocalHolder.setValue(FIRST);
     // capture!
     ContextSnapshot snapshot = ContextSnapshot.captureAllUsing(key -> true, registry);
@@ -48,9 +48,9 @@ class AppTest {
 
   @Test void worksBetweenThreads() {
     Loggers.useConsoleLoggers();
-    final var CONTEXT_KEY = "كيف حالك";
-    final var ALPHANUMERIC_ID = "THIS IS MY ID!!!1234-567-ABC";
-    final var HELLO = "HELLO!";
+    final String CONTEXT_KEY = "كيف حالك";
+    final String ALPHANUMERIC_ID = "THIS IS MY ID!!!1234-567-ABC";
+    final String HELLO = "HELLO!";
     registry.registerThreadLocalAccessor(CONTEXT_KEY,
       MY_THREADLOCALSTORAGE::get,
       MY_THREADLOCALSTORAGE::set,
@@ -63,7 +63,7 @@ class AppTest {
       .contextWrite(Context.of(CONTEXT_KEY, ALPHANUMERIC_ID)));
 
     assertNull(MY_THREADLOCALSTORAGE.get());
-    final var BOO = "BOO!";
+    final String BOO = "BOO!";
     MY_THREADLOCALSTORAGE.set(BOO);
     assertEquals(MY_THREADLOCALSTORAGE.get(), BOO);
 
